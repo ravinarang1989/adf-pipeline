@@ -1,0 +1,139 @@
+{
+	"name": "CopyDataIntoDB",
+	"properties": {
+		"activities": [
+			{
+				"name": "Lkp_File_Details",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "adls_json_ds",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach_copy_file_into_sqlTable",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lkp_File_Details",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lkp_File_Details').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "copy data into tables",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "generic_adls_flat_file_ds",
+									"type": "DatasetReference",
+									"parameters": {
+										"File_name": {
+											"value": "@item().FileName",
+											"type": "Expression"
+										},
+										"File_path": {
+											"value": "@item().FilePath",
+											"type": "Expression"
+										},
+										"Container": {
+											"value": "@item().Container",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "generic_SQLDB_ds",
+									"type": "DatasetReference",
+									"parameters": {
+										"db_name": {
+											"value": "@item().DatabaseName",
+											"type": "Expression"
+										},
+										"schema_name": "dbo",
+										"table_name": {
+											"value": "@item().TableName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2025-01-09T14:02:48Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

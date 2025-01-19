@@ -1,0 +1,9 @@
+{
+	"name": "adf-hc-si-01",
+	"location": "southindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "8b9e53dc-cbb9-47b3-bbc5-b7bca469302f",
+		"tenantId": "cd160f93-9ea1-40a1-a46b-d35951deb4da"
+	}
+}
